@@ -125,18 +125,18 @@ function render(company, reviews, query = {}) {
 
     /* Layout */
     .main-layout {
-      max-width: 1100px; margin: -44px auto 0;
+      max-width: 780px; margin: -44px auto 0;
       padding: 0 20px 60px;
-      display: grid;
-      grid-template-columns: 1fr 460px 1fr;
-      gap: 28px; align-items: start;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
     }
 
     /* Form card */
     .form-card {
       background: #fff; border-radius: var(--radius);
       box-shadow: var(--shadow); overflow: hidden;
-      grid-column: 2;
+      width: 100%;
     }
 
     /* Progress bar */
@@ -363,11 +363,11 @@ function render(company, reviews, query = {}) {
     .success-screen p { color: #6b7280; }
 
     /* Reviews */
-    .reviews-col {
-      display: flex; flex-direction: column; gap: 16px; padding-top: 12px;
+    .reviews-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
     }
-    .reviews-col.left  { grid-column: 1; }
-    .reviews-col.right { grid-column: 3; }
     .review-card {
       background: #fff; border-radius: var(--radius);
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
@@ -386,16 +386,15 @@ function render(company, reviews, query = {}) {
     .review-author strong { display: block; font-size: 0.88rem; }
     .review-title { font-size: 0.78rem; color: #9ca3af; }
 
-    @media (max-width: 900px) {
-      .main-layout { grid-template-columns: 1fr; margin-top: -24px; }
-      .form-card { grid-column: 1; order: 1; }
-      .reviews-col { grid-column: 1; order: 2; flex-direction: row; flex-wrap: wrap; }
-      .review-card { flex: 1 1 280px; }
+    @media (max-width: 700px) {
+      .reviews-row { grid-template-columns: 1fr 1fr; }
       .options-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 480px) {
       .hero { padding: 36px 16px 60px; }
+      .main-layout { margin-top: -24px; }
       .form-inner { padding: 24px 18px; }
+      .reviews-row { grid-template-columns: 1fr; }
       .options-grid { grid-template-columns: 1fr; }
       .email-row { flex-direction: column; }
     }
@@ -416,12 +415,6 @@ function render(company, reviews, query = {}) {
   </section>
 
   <div class="main-layout">
-
-    <!-- Left reviews -->
-    <div class="reviews-col left">
-      ${reviews.length >= 1 ? reviewCard(reviews[0]) : ''}
-      ${reviews.length >= 2 ? reviewCard(reviews[1]) : ''}
-    </div>
 
     <!-- Form card -->
     <div class="form-card">
@@ -582,10 +575,11 @@ function render(company, reviews, query = {}) {
       </div>
     </div>
 
-    <!-- Right reviews -->
-    <div class="reviews-col right">
+    <!-- Reviews row below form -->
+    <div class="reviews-row">
+      ${reviews.length >= 1 ? reviewCard(reviews[0]) : ''}
+      ${reviews.length >= 2 ? reviewCard(reviews[1]) : ''}
       ${reviews.length >= 3 ? reviewCard(reviews[2]) : ''}
-      ${reviews.length >= 4 ? reviewCard(reviews[3]) : ''}
     </div>
 
   </div>
