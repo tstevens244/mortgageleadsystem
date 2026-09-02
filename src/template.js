@@ -363,6 +363,7 @@ function render(company, reviews, query = {}) {
     .success-screen p { color: #6b7280; }
 
     /* Reviews */
+    .reviews-section { position: relative; }
     .reviews-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -372,7 +373,29 @@ function render(company, reviews, query = {}) {
       background: #fff; border-radius: var(--radius);
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       padding: 20px; border-top: 3px solid var(--primary);
+      transition: opacity 0.3s, transform 0.3s;
     }
+    .reviews-nav {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; margin-top: 16px;
+    }
+    .rev-arrow {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 2px solid var(--primary);
+      background: #fff; color: var(--primary);
+      font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .rev-arrow:hover { background: var(--primary); color: #fff; }
+    .rev-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+    .rev-arrow:disabled:hover { background: #fff; color: var(--primary); }
+    .rev-dots { display: flex; gap: 6px; }
+    .rev-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #d1d5db; transition: background 0.2s;
+    }
+    .rev-dot.active { background: var(--primary); }
     .review-stars { display: flex; gap: 2px; color: #f59e0b; margin-bottom: 10px; }
     .review-body { font-size: 0.92rem; line-height: 1.55; color: #374151; margin-bottom: 14px; }
     .review-author { display: flex; align-items: center; gap: 10px; }
@@ -576,10 +599,13 @@ function render(company, reviews, query = {}) {
     </div>
 
     <!-- Reviews row below form -->
-    <div class="reviews-row">
-      ${reviews.length >= 1 ? reviewCard(reviews[0]) : ''}
-      ${reviews.length >= 2 ? reviewCard(reviews[1]) : ''}
-      ${reviews.length >= 3 ? reviewCard(reviews[2]) : ''}
+    <div class="reviews-section">
+      <div class="reviews-row" id="reviewsRow"></div>
+      <div class="reviews-nav" id="reviewsNav" style="display:none">
+        <button class="rev-arrow" id="revPrev" onclick="shiftReviews(-1)" disabled>&#8592;</button>
+        <div class="rev-dots" id="revDots"></div>
+        <button class="rev-arrow" id="revNext" onclick="shiftReviews(1)">&#8594;</button>
+      </div>
     </div>
 
   </div>
@@ -720,6 +746,72 @@ function render(company, reviews, query = {}) {
       document.getElementById('successScreen').classList.add('active');
       ${company.redirect_url ? `setTimeout(() => { window.location.href = '${escapeHtml(company.redirect_url)}'; }, 2500);` : ''}
     }
+
+    // Reviews carousel
+    const allReviews = ${JSON.stringify(reviews.map(r => ({
+      author_name: r.author_name,
+      author_title: r.author_title || '',
+      rating: r.rating,
+      body: r.body,
+      avatar_url: r.avatar_url || null
+    })))};
+
+    let revPage = 0;
+    const PER_PAGE = 3;
+
+    function totalPages() {
+      return Math.ceil(allReviews.length / PER_PAGE);
+    }
+
+    function renderReviews() {
+      const row = document.getElementById('reviewsRow');
+      const start = revPage * PER_PAGE;
+      const slice = allReviews.slice(start, start + PER_PAGE);
+
+      row.style.opacity = '0';
+      row.style.transform = 'translateX(10px)';
+
+      setTimeout(() => {
+        row.innerHTML = slice.map(r => {
+          const initials = r.author_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+          const stars = Array.from({length:5},(_,i) => {
+            const c = i < r.rating ? 'currentColor' : '#d1d5db';
+            return '<svg width="16" height="16" viewBox="0 0 20 20" fill="'+c+'" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>';
+          }).join('');
+          const avatar = r.avatar_url
+            ? '<img src="'+r.avatar_url+'" alt="'+r.author_name+'" width="40" height="40">'
+            : '<span>'+initials+'</span>';
+          return '<article class="review-card"><div class="review-stars">'+stars+'</div><p class="review-body">'+r.body+'</p><footer class="review-author"><div class="review-avatar">'+avatar+'</div><div><strong>'+r.author_name+'</strong>'+(r.author_title?'<span class="review-title">'+r.author_title+'</span>':'')+'</div></footer></article>';
+        }).join('');
+
+        row.style.transition = 'opacity 0.3s, transform 0.3s';
+        row.style.opacity = '1';
+        row.style.transform = 'translateX(0)';
+      }, 150);
+
+      // Arrows
+      document.getElementById('revPrev').disabled = revPage === 0;
+      document.getElementById('revNext').disabled = revPage >= totalPages() - 1;
+
+      // Dots
+      const dots = document.getElementById('revDots');
+      dots.innerHTML = Array.from({length: totalPages()}, (_,i) =>
+        '<div class="rev-dot' + (i === revPage ? ' active' : '') + '"></div>'
+      ).join('');
+    }
+
+    function shiftReviews(dir) {
+      revPage = Math.max(0, Math.min(totalPages() - 1, revPage + dir));
+      renderReviews();
+    }
+
+    if (allReviews.length > 0) {
+      renderReviews();
+      if (allReviews.length > PER_PAGE) {
+        document.getElementById('reviewsNav').style.display = 'flex';
+      }
+    }
+
   </script>
 </body>
 </html>`;
