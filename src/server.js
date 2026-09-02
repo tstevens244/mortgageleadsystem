@@ -56,7 +56,7 @@ async function getCompany(subdomain) {
 
 async function getReviews(companyId) {
   const [rows] = await db.execute(
-    'SELECT * FROM reviews WHERE company_id = ? AND active = 1 ORDER BY sort_order ASC LIMIT 10',
+    'SELECT * FROM reviews WHERE company_id = ? AND active = 1 ORDER BY sort_order ASC LIMIT 9',
     [companyId]
   );
   return rows;
